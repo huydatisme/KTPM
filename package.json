@@ -1,0 +1,20 @@
+{
+  "name": "cs2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-fileupload": "^1.5.1",
+    "node-tesseract-ocr": "^2.2.1",
+    "open-google-translator": "^1.0.5",
+    "pdfkit": "^0.15.0"
+  }
+}

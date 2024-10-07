@@ -10,7 +10,7 @@ $ npm install
 # Tạo folder cho output
 $ mkdir output
 # Khởi chạy ứng dụng demo
-$ npm start
+$ node index.js
 ```
 
 ## Mô Tả

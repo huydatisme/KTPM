@@ -14,6 +14,7 @@ app.use(cors());  // Cho phép CORS để frontend và backend giao tiếp
 app.use(fileUpload());  // Middleware để xử lý file upload
 app.use(express.json());
 app.use(express.static('public'));  // Thư mục chứa file tĩnh (HTML, CSS, JS)
+app.use('/output', express.static(path.join(__dirname, 'output')));
 
 // API xử lý upload ảnh và dịch văn bản
 app.post('/upload', async (req, res) => {
@@ -51,7 +52,8 @@ app.post('/export-pdf', (req, res) => {
     try {
         const { text } = req.body;
         const pdfFile = createPDF(text);
-        res.json({ pdfFile });
+        res.json({ pdfFile: 'output/output.pdf' });
+
     } catch (error) {
         console.error(error);
         res.status(500).send('Error creating PDF');

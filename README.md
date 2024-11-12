@@ -9,10 +9,18 @@ Yêu cầu cài đặt trước [tesseract](https://tesseract-ocr.github.io/tess
 $ npm install
 # Tạo folder cho output
 $ mkdir output
+# Cài rabbit MQ cho node
+$ npm install amqplib uuid 
+# Cài Server RabbitMq bằng docker
+$ docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-manage
+đi đến http://localhost:15672/ với user:guest và password guest  để xem bảng dashboard
+
 # Khởi chạy ứng dụng demo
 $ node index.js
+# Khởi chạy worker node
+$ node worker.js
 ```
-
+d
 ## Mô Tả
 | File | Chức năng |
 |--|:--|

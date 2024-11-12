@@ -34,7 +34,7 @@
         </div>
 
         <!-- Button to Translate Image Text -->
-        <button class="translate-btn" type="button" id="translate-btn" style="display: none;">
+        <button class="translate-btn" type="button" id="translate-btn" style="display: none;" onclick="translateImage()">
             Translate Image
         </button>
 
@@ -42,9 +42,14 @@
         <div id="translated-text"></div>
 
         <!-- Button to Export PDF -->
-        <button class="export-pdf-btn" type="button" id="export-pdf-btn" style="display: none;">
+        <button class="export-pdf-btn" type="button" id="export-pdf-btn" style="display: none;" onclick="exportPDF()">
             Export to PDF
         </button>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" style="display: none;">
+            Processing, please wait...
+        </div>
     </div>
     <script src="./script.js"></script>
 </body>

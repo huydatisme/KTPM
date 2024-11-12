@@ -12,43 +12,60 @@ function uploadImage(input) {
             document.querySelector('.file-upload-content').style.display = 'block';
             document.querySelector('.image-title').textContent = input.files[0].name;
 
-            // Hiện nút "Translate Image" khi ảnh đã được upload
+            // Hiển thị nút "Translate Image" khi ảnh đã được upload
             document.getElementById('translate-btn').style.display = 'block';
         };
         reader.readAsDataURL(input.files[0]);
-
-        // Gửi yêu cầu tải ảnh lên và dịch ảnh
-        const formData = new FormData();
-        formData.append('image', input.files[0]);
-        
-        // Đặt listener cho nút "Translate Image"
-        document.getElementById('translate-btn').onclick = function() {
-            fetch('http://localhost:3000/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Hiển thị văn bản đã dịch
-                document.getElementById('translated-text').innerText = data.translatedText;
-                // Hiển thị nút xuất PDF sau khi có kết quả dịch
-                document.getElementById('export-pdf-btn').style.display = 'block';
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        };
     }
 }
 
-// Tạo file PDF từ văn bản đã dịch
+function translateImage() {
+    const formData = new FormData();
+    const imageFile = document.querySelector('.file-upload-input').files[0];
+    formData.append('image', imageFile);
+
+    // Hiển thị chỉ báo tải
+    document.getElementById('loading-indicator').style.display = 'block';
+    document.getElementById('translate-btn').disabled = true;
+
+    fetch('http://localhost:3000/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Kiểm tra nếu có dữ liệu translatedText
+        if (data.translatedText) {
+            document.getElementById('translated-text').innerText = data.translatedText;
+            document.getElementById('export-pdf-btn').style.display = 'block';
+        } else {
+            console.error('No translated text received:', data);
+            alert('Translation failed. No text returned from server.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred: ' + error.message);
+    })
+    .finally(() => {
+        document.getElementById('loading-indicator').style.display = 'none';
+        document.getElementById('translate-btn').disabled = false;
+    });
+}
+
 document.getElementById('export-pdf-btn').addEventListener('click', function() {
     const translatedText = document.getElementById('translated-text').innerText;
+
+    // Kiểm tra nếu translatedText tồn tại trước khi gửi yêu cầu
+    if (!translatedText) {
+        alert('No translated text available for export.');
+        return;
+    }
 
     fetch('http://localhost:3000/export-pdf', {
         method: 'POST',
@@ -57,15 +74,27 @@ document.getElementById('export-pdf-btn').addEventListener('click', function() {
         },
         body: JSON.stringify({ text: translatedText })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
-        // Tải file PDF xuống
-        window.location.href = `http://localhost:3000/${data.pdfFile}`;
+        // Kiểm tra nếu pdfFile tồn tại trong dữ liệu phản hồi
+        if (data.pdfFile) {
+            window.location.href = `http://localhost:3000/${data.pdfFile}`;
+        } else {
+            console.error('No PDF file received:', data);
+            alert('Export failed. No PDF file returned from server.');
+        }
     })
     .catch(error => {
         console.error('Error:', error);
+        alert('An error occurred: ' + error.message);
     });
 });
+
 
 function readURL(input) {
     if (input.files && input.files[0]) {

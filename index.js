@@ -2,21 +2,32 @@ const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const path = require('path');
+const fs = require('fs');
+const amqp = require('amqplib');
 const { image2text } = require('./utils/ocr');
 const { translate } = require('./utils/translate');
 const { createPDF } = require('./utils/pdf');
-const fs = require('fs');
 
 const app = express();
-
-// Middleware
-app.use(cors());  // Cho phép CORS để frontend và backend giao tiếp
-app.use(fileUpload());  // Middleware để xử lý file upload
+app.use(cors());
+app.use(fileUpload());
 app.use(express.json());
-app.use(express.static('public'));  // Thư mục chứa file tĩnh (HTML, CSS, JS)
+app.use(express.static('public'));
 app.use('/output', express.static(path.join(__dirname, 'output')));
 
-// API xử lý upload ảnh và dịch văn bản
+// Kết nối tới RabbitMQ
+async function connectRabbitMQ() {
+    const connection = await amqp.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+    await channel.assertQueue('imageProcessingQueue');
+    await channel.assertQueue('pdfCreationQueue');
+    return channel;
+}
+
+let channel;
+connectRabbitMQ().then(ch => channel = ch);
+
+// API xử lý upload ảnh và đưa tác vụ vào hàng đợi RabbitMQ
 app.post('/upload', async (req, res) => {
     try {
         if (!req.files || !req.files.image) {
@@ -47,18 +58,22 @@ app.post('/upload', async (req, res) => {
     }
 });
 
-// API xuất file PDF với văn bản đã dịch
+// API đưa tác vụ tạo PDF vào hàng đợi RabbitMQ
 app.post('/export-pdf', (req, res) => {
     try {
         const { text } = req.body;
-        const pdfFile = createPDF(text);
-        res.json({ pdfFile: 'output/output.pdf' });
 
+        // Tạo file PDF từ văn bản đã dịch
+        const pdfFile = createPDF(text);
+
+        // Trả về đường dẫn của file PDF cho client
+        res.json({ pdfFile: 'output/output.pdf' });
     } catch (error) {
-        console.error(error);
+        console.error('Error creating PDF:', error);
         res.status(500).send('Error creating PDF');
     }
 });
+
 
 // Khởi chạy server
 const PORT = process.env.PORT || 3000;

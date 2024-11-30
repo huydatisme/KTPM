@@ -4,46 +4,45 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Upload with Preview, Translate, and Export PDF</title>
+    <title>Multi-Image Upload, Translate, and Export PDF</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
     <div class="file-upload">
-        <!-- Button to upload image -->
+        <!-- Button to upload multiple images -->
         <button class="file-upload-btn" type="button" onclick="$('.file-upload-input').trigger('click')">
-            Add Image
+            Add Images
         </button>
 
         <!-- Image Upload Wrapper -->
         <div class="image-upload-wrap">
-            <input class="file-upload-input" type="file" onchange="readURL(this);" accept="image/*" />
+            <input class="file-upload-input" type="file" onchange="readURL(this);" accept="image/*" multiple />
             <div class="drag-text">
-                <h3>Drag and drop a file or select Add Image</h3>
+                <h3>Drag and drop files or select Add Images</h3>
             </div>
         </div>
 
-        <!-- Preview Uploaded Image -->
-        <div class="file-upload-content">
-            <img class="file-upload-image" src="#" alt="your image" />
-            <div class="image-title-wrap">
-                <button type="button" onclick="removeUpload()" class="remove-image">
-                    Remove <span class="image-title">Uploaded Image</span>
-                </button>
-            </div>
+        <!-- Preview Uploaded Images -->
+        <div class="file-upload-content" id="preview-container" style="display: none;">
+            <h4>Uploaded Images:</h4>
+            <div id="image-preview-list"></div>
+            <button type="button" onclick="removeAllUploads()" class="remove-all-images">
+                Remove All Images
+            </button>
         </div>
 
-        <!-- Button to Translate Image Text -->
-        <button class="translate-btn" type="button" id="translate-btn" style="display: none;" onclick="translateImage()">
-            Translate Image
+        <!-- Button to Translate Images Text -->
+        <button class="translate-btn" type="button" id="translate-btn" style="display: none;" onclick="translateImages()">
+            Translate Images
         </button>
 
-        <!-- Area to Display Translated Text -->
-        <div id="translated-text"></div>
+        <!-- Area to Display Translated Text for Each Image -->
+        <div id="results-container" style="margin-top: 20px;"></div>
 
-        <!-- Button to Export PDF -->
-        <button class="export-pdf-btn" type="button" id="export-pdf-btn" style="display: none;" onclick="exportPDF()">
-            Export to PDF
+        <!-- Button to Export All Translations to PDFs -->
+        <button class="export-pdf-btn" type="button" id="export-pdf-btn" style="display: none;">
+            Export All to PDFs
         </button>
 
         <!-- Loading Indicator -->

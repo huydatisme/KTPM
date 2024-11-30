@@ -1,18 +1,24 @@
-const PDFDocument = require('pdfkit');
 const fs = require('fs');
-const path = require('path');
+const PDFDocument = require('pdfkit');
 
-function createPDF(text) {
-    const doc = new PDFDocument();
-    const pdfFile = path.join(__dirname, '../output/output.pdf'); // Đảm bảo đường dẫn đúng
-    doc.pipe(fs.createWriteStream(pdfFile));
-    doc.font('font/Roboto-Regular.ttf')
-        .fontSize(14)
-        .text(text, 100, 100);
-    doc.end();
-    return pdfFile; // Trả về đường dẫn tệp PDF
+function createPDF(text, outputPath) {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument();
+
+        const writeStream = fs.createWriteStream(outputPath);
+        doc.pipe(writeStream);
+
+        doc.text(text);
+        doc.end();
+
+        writeStream.on('finish', () => {
+            resolve();
+        });
+
+        writeStream.on('error', (err) => {
+            reject(err);
+        });
+    });
 }
 
-module.exports = {
-    createPDF
-}
+module.exports = { createPDF };

@@ -9,8 +9,11 @@ const { createPDF } = require('./utils/pdf');
 async function connectRabbitMQ() {
     const connection = await amqp.connect('amqp://localhost');
     const channel = await connection.createChannel();
-    await channel.assertQueue('imageProcessingQueue');
-    await channel.assertQueue('pdfCreationQueue');
+
+    // Đảm bảo các hàng đợi tồn tại
+    await channel.assertQueue('imageProcessingQueue', { durable: true });
+    await channel.assertQueue('pdfCreationQueue', { durable: true });
+
     return channel;
 }
 
@@ -24,16 +27,25 @@ async function startWorker() {
             const { imagePath } = task;
 
             try {
-                // Chuyển đổi ảnh thành văn bản và dịch
-                const text = await image2text(imagePath);
-                const translatedText = await translate(text);
+                console.log(`Starting image processing for: ${imagePath}`);
 
-                console.log(`Processed image: ${imagePath}, Translated Text: ${translatedText}`);
+                // Chuyển đổi ảnh thành văn bản
+                const text = await image2text(imagePath);
+                console.log(`Extracted text: ${text}`);
+
+                // Dịch văn bản
+                const translatedText = await translate(text);
+                console.log(`Translated text: ${translatedText}`);
+
+                // Sau khi xử lý xong, gửi văn bản đã dịch vào hàng đợi pdfCreationQueue
+                channel.sendToQueue('pdfCreationQueue', Buffer.from(JSON.stringify({ text: translatedText })));
+                console.log(`Task added to pdfCreationQueue for text: ${translatedText}`);
             } catch (error) {
                 console.error('Error processing image:', error);
             }
 
-            channel.ack(msg);  // Xác nhận đã xử lý xong
+            // Xác nhận đã xử lý xong thông báo
+            channel.ack(msg);
         }
     });
 
@@ -44,18 +56,31 @@ async function startWorker() {
             const { text } = task;
 
             try {
+                console.log(`Starting PDF creation for text: ${text}`);
+
+                // Tạo tên file PDF duy nhất
+                const pdfFileName = `output_${Date.now()}.pdf`;
+                const pdfFilePath = path.join(__dirname, 'output', pdfFileName);
+
+                // Tạo thư mục nếu chưa tồn tại
+                if (!fs.existsSync(path.join(__dirname, 'output'))) {
+                    fs.mkdirSync(path.join(__dirname, 'output'), { recursive: true });
+                }
+
                 // Tạo file PDF từ văn bản
-                const pdfFile = createPDF(text);
-                console.log(`PDF created: ${pdfFile}`);
+                await createPDF(text, pdfFilePath);
+                console.log(`PDF created and saved to: ${pdfFilePath}`);
             } catch (error) {
                 console.error('Error creating PDF:', error);
             }
 
-            channel.ack(msg);  // Xác nhận đã xử lý xong
+            // Xác nhận đã xử lý xong thông báo
+            channel.ack(msg);
         }
     });
 
     console.log('Worker started and listening to queues...');
 }
 
+// Bắt đầu Worker
 startWorker().catch(console.error);

@@ -7,7 +7,7 @@ const { createPDF } = require('./utils/pdf');
 
 // Kết nối tới RabbitMQ
 async function connectRabbitMQ() {
-    const connection = await amqp.connect('amqp://localhost:5672');
+    const connection = await amqp.connect('amqp://localhost');
     const channel = await connection.createChannel();
 
     // Đảm bảo các hàng đợi tồn tại
@@ -25,25 +25,35 @@ async function startWorker() {
         if (msg !== null) {
             const task = JSON.parse(msg.content.toString());
             const { imagePath } = task;
-
+    
             try {
                 console.log(`Starting image processing for: ${imagePath}`);
-
+    
                 // Chuyển đổi ảnh thành văn bản
                 const text = await image2text(imagePath);
                 console.log(`Extracted text: ${text}`);
-
+    
                 // Dịch văn bản
                 const translatedText = await translate(text);
                 console.log(`Translated text: ${translatedText}`);
-
-                // Sau khi xử lý xong, gửi văn bản đã dịch vào hàng đợi pdfCreationQueue
-                channel.sendToQueue('pdfCreationQueue', Buffer.from(JSON.stringify({ text: translatedText })));
-                console.log(`Task added to pdfCreationQueue for text: ${translatedText}`);
+    
+                // Trả kết quả về hàng đợi replyTo
+                channel.sendToQueue(
+                    msg.properties.replyTo,
+                    Buffer.from(
+                        JSON.stringify({
+                            filename: path.basename(imagePath),
+                            translatedText,
+                        })
+                    ),
+                    { correlationId: msg.properties.correlationId }
+                );
+    
+                console.log(`Result sent back for file: ${imagePath}`);
             } catch (error) {
                 console.error('Error processing image:', error);
             }
-
+    
             // Xác nhận đã xử lý xong thông báo
             channel.ack(msg);
         }

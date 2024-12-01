@@ -7,7 +7,9 @@ function createPDF(text, outputPath) {
 
         const writeStream = fs.createWriteStream(outputPath);
         doc.pipe(writeStream);
-
+        doc.font('font/Roboto-Regular.ttf')
+        .fontSize(14)
+        .text(text, 100, 100);
         doc.text(text);
         doc.end();
 

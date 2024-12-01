@@ -7,4 +7,5 @@ RUN npm install
 
 COPY . .
 
-CMD ["node", "worker.js"]
+EXPOSE 8080
+CMD ["npm", "start"]

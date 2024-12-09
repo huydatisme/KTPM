@@ -19,7 +19,7 @@ const tasks = {}; // Bộ nhớ tạm lưu trữ trạng thái các yêu cầu
 // Kết nối tới RabbitMQ
 async function connectRabbitMQ() {
     try {
-        const connection = await amqp.connect('amqp://localhost');
+        const connection = await amqp.connect('amqp://rabbitmq.ktpm.svc.cluster.local:5672');
         channel = await connection.createChannel();
         await channel.assertQueue('imageProcessingQueue'); // Hàng đợi xử lý ảnh
         await channel.assertQueue('responseQueue'); // Hàng đợi phản hồi

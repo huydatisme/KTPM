@@ -1,11 +1,25 @@
-FROM node:18
+FROM node:18-alpine
 
-WORKDIR /usr/src/app
+RUN apk add --no-cache \
+    tesseract-ocr \
+    tesseract-ocr-data-eng \
+    tesseract-ocr-data-vie \
+    build-base \
+    g++ \
+    cairo-dev \
+    pango-dev \
+    icu-dev
+
+WORKDIR /app
+
 
 COPY package*.json ./
-RUN npm install
-
 COPY . .
 
-EXPOSE 8080
-CMD ["npm", "start"]
+RUN npm install
+
+# Mở cổng server
+EXPOSE 3000
+
+# Chạy file index.js
+CMD ["node", "index.js"]

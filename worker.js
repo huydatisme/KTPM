@@ -7,7 +7,7 @@ const { createPDF } = require('./utils/pdf');
 
 // Kết nối tới RabbitMQ
 async function connectRabbitMQ() {
-    const connection = await amqp.connect('amqp://localhost');
+    const connection = await amqp.connect('amqp://rabbitmq.ktpm.svc.cluster.local:5672');
     const channel = await connection.createChannel();
 
     // Đảm bảo các hàng đợi tồn tại

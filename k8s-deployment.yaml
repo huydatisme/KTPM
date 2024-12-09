@@ -1,0 +1,136 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ktpm
+
+---
+# RabbitMQ Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: ktpm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: tranhuydat28/rabbitmq:latest
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: ktpm
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: 5672
+    - name: management
+      port: 15672
+      targetPort: 15672
+  clusterIP: None  # Điều này giúp cho các service khác có thể sử dụng DNS để kết nối RabbitMQ
+
+---
+# API Deployment and Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: ktpm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: tranhuydat28/api-server:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: AMQP_URL
+              value: amqp://rabbitmq.ktpm.svc.cluster.local  # Cập nhật đúng hostname RabbitMQ
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-server
+  namespace: ktpm
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30001  # Đảm bảo có nodePort ở đây
+  type: NodePort 
+---
+# Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: ktpm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: tranhuydat28/worker:latest
+          env:
+            - name: AMQP_URL
+              value: amqp://rabbitmq.ktpm.svc.cluster.local  # Cập nhật đúng hostname RabbitMQ
+
+---
+# HPA for Worker
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-hpa
+  namespace: ktpm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
